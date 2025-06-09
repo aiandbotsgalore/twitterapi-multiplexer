@@ -1,4 +1,3 @@
-
 from flask import Flask, request, jsonify
 import requests
 import os
@@ -13,41 +12,72 @@ HEADERS = {
     "X-RapidAPI-Host": "twitter241.p.rapidapi.com"
 }
 
-@app.route("/twittersearch", methods=["POST"])
-def search_twitter():
-    data = request.json
-    query = data.get("query")
+def search_twitter(params):
+    query = params.get("query")
+    type_ = params.get("type", "Top")
+    count = params.get("count", "10")
+
     if not query:
-        return jsonify({"error": "Query parameter missing"}), 400
-    response = requests.get(f"{BASE_URL}/search", headers=HEADERS, params={"q": query})
+        return jsonify({"error": "Missing 'query' in params"}), 400
+
+    response = requests.get(f"{BASE_URL}/search", headers=HEADERS, params={
+        "query": query,
+        "type": type_,
+        "count": count
+    })
     return jsonify(response.json())
 
-@app.route("/getuserdetails", methods=["POST"])
-def get_user_details():
-    data = request.json
-    username = data.get("username")
+def get_user_by_username(params):
+    username = params.get("username")
     if not username:
-        return jsonify({"error": "Username parameter missing"}), 400
-    response = requests.get(f"{BASE_URL}/getuserdetails", headers=HEADERS, params={"username": username})
+        return jsonify({"error": "Missing 'username' in params"}), 400
+
+    response = requests.get(f"{BASE_URL}/user", headers=HEADERS, params={
+        "username": username
+    })
     return jsonify(response.json())
 
-@app.route("/gettweetdetails", methods=["POST"])
-def get_tweet_details():
-    data = request.json
-    tweet_id = data.get("tweet_id")
+def get_tweet_details(params):
+    tweet_id = params.get("tweet_id")
     if not tweet_id:
-        return jsonify({"error": "Tweet ID parameter missing"}), 400
-    response = requests.get(f"{BASE_URL}/gettweetdetails", headers=HEADERS, params={"tweet_id": tweet_id})
+        return jsonify({"error": "Missing 'tweet_id' in params"}), 400
+
+    response = requests.get(f"{BASE_URL}/tweet", headers=HEADERS, params={
+        "tweet_id": tweet_id
+    })
     return jsonify(response.json())
 
-@app.route("/getusertweets", methods=["POST"])
-def get_user_tweets():
-    data = request.json
-    user_id = data.get("user_id")
+def get_user_tweets(params):
+    user_id = params.get("user_id")
+    count = params.get("count", "10")
     if not user_id:
-        return jsonify({"error": "User ID parameter missing"}), 400
-    response = requests.get(f"{BASE_URL}/getusertweets", headers=HEADERS, params={"user_id": user_id})
+        return jsonify({"error": "Missing 'user_id' in params"}), 400
+
+    response = requests.get(f"{BASE_URL}/user-tweets", headers=HEADERS, params={
+        "user": user_id,
+        "count": count
+    })
     return jsonify(response.json())
+
+@app.route("/twitter", methods=["POST"])
+def twitter_router():
+    data = request.get_json()
+    if not data or "action" not in data or "params" not in data:
+        return jsonify({"error": "Request must contain 'action' and 'params'"}), 400
+
+    action = data["action"]
+    params = data["params"]
+
+    if action == "search_twitter":
+        return search_twitter(params)
+    elif action == "get_user_by_username":
+        return get_user_by_username(params)
+    elif action == "get_tweet_details":
+        return get_tweet_details(params)
+    elif action == "get_user_tweets":
+        return get_user_tweets(params)
+    else:
+        return jsonify({"error": f"Unsupported action '{action}'"}), 400
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=8080)
