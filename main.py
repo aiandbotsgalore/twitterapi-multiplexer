@@ -1,4 +1,3 @@
-
 from flask import Flask, request, jsonify
 import requests, os
 
@@ -20,13 +19,12 @@ def twitter_api_proxy():
     if not action:
         return jsonify({"error": "Missing 'action' field"}), 400
 
-endpoint_map = {
-    "search_twitter": "/search-v2",  # <-- CHANGE THIS LINE
-    "get_tweet_details": "/gettweetdetails",
-    "get_user_by_username": "/getuserdetails",
-    "get_user_tweets": "/getusertweets"
-}
-
+    endpoint_map = {
+        "search_twitter": "/search-v2",  # updated from /search to /search-v2 per your recent usage
+        "get_tweet_details": "/gettweetdetails",
+        "get_user_by_username": "/getuserdetails",
+        "get_user_tweets": "/getusertweets"
+    }
 
     endpoint = endpoint_map.get(action)
     if not endpoint:
